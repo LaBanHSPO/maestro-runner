@@ -62,6 +62,7 @@ type Selector struct {
 	// Inline step properties (parsed with selector for YAML convenience)
 	Optional              *bool  `yaml:"optional"`
 	RetryTapIfNoChange    *bool  `yaml:"retryTapIfNoChange"`
+	TapSelf               *bool  `yaml:"tapSelf"` // Tap the matched element itself, not its nearest clickable ancestor (devicelab Android)
 	WaitUntilVisible      *bool  `yaml:"waitUntilVisible"`
 	Point                 string `yaml:"point"`                 // Tap point "x%, y%"
 	Start                 string `yaml:"start"`                 // Swipe start "x%, y%"
@@ -108,6 +109,7 @@ type selectorRaw struct {
 	InsideOf              *Selector   `yaml:"insideOf"`
 	Optional              *bool       `yaml:"optional"`
 	RetryTapIfNoChange    *bool       `yaml:"retryTapIfNoChange"`
+	TapSelf               *bool       `yaml:"tapSelf"`
 	WaitUntilVisible      *bool       `yaml:"waitUntilVisible"`
 	Point                 string      `yaml:"point"`
 	Start                 string      `yaml:"start"`
@@ -167,6 +169,7 @@ func (s *Selector) UnmarshalYAML(node *yaml.Node) error {
 	s.InsideOf = raw.InsideOf
 	s.Optional = raw.Optional
 	s.RetryTapIfNoChange = raw.RetryTapIfNoChange
+	s.TapSelf = raw.TapSelf
 	s.WaitUntilVisible = raw.WaitUntilVisible
 	s.Point = raw.Point
 	s.Start = raw.Start

@@ -107,6 +107,14 @@ func (d *Driver) tapOn(step *flow.TapOnStep) *core.CommandResult {
 			case step.Selector.TextContains != "":
 				d.lastWebTapText = step.Selector.TextContains
 			}
+		} else if step.Selector.TapSelf != nil && *step.Selector.TapSelf {
+			// tapSelf: the flow says the label sits on a field inside a larger
+			// clickable container (a React Native input whose hint is a
+			// separate TextView). Promoting that match to the container taps
+			// its centre, which misses the field, so tap the matched element's
+			// own centre instead. Still one find-and-click call, so no extra
+			// round trip; the default stays clickable-first.
+			strategies = append(allStrategies, clickableStrategies...)
 		} else {
 			strategies = append(clickableStrategies, allStrategies...)
 		}

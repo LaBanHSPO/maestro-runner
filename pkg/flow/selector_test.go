@@ -249,6 +249,29 @@ containsDescendants:
 			},
 		},
 		{
+			name: "tapSelf",
+			yaml: `
+text: Username
+tapSelf: true
+`,
+			validate: func(t *testing.T, s *Selector) {
+				if s.TapSelf == nil || !*s.TapSelf {
+					t.Error("expected tapSelf=true")
+				}
+			},
+		},
+		{
+			name: "tapSelf unset by default",
+			yaml: `
+text: Username
+`,
+			validate: func(t *testing.T, s *Selector) {
+				if s.TapSelf != nil {
+					t.Error("expected tapSelf to stay unset")
+				}
+			},
+		},
+		{
 			name: "inline step properties",
 			yaml: `
 text: Submit

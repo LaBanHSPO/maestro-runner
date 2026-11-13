@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+**DeviceLab Android: `tapSelf: true` taps the element that holds the text, not its clickable ancestor.** A `tapOn` by text promotes the match to its nearest clickable ancestor, which is right for a button whose label sits on a child. In a React Native screen whose input's hint is a separate `TextView`, that ancestor can be the whole-screen container: the tap landed on its centre, an empty spot, the field never took focus, and `inputText` typed into nothing while the steps still passed. With `tapSelf: true` the step taps the centre of the element the text is on, in the same single find-and-click call, so it costs no extra round trip, and every other `tapOn` keeps the clickable-first order. On a Galaxy S24 Ultra the login field took the text, and `inputText` went from 5.0 s to 0.44 s. Other drivers ignore the key.
+
+```yaml
+- tapOn:
+    text: "Phone number or username"
+    tapSelf: true
+```
+
 ## [1.1.31] - 2026-11-11
 
 A fix release for 1.1.30, whose GitHub release was withdrawn. Everything listed under 1.1.30 below ships in 1.1.31. On top of it: WDA answers the permission prompts a flow does not tap (a 1.1.30 regression), taps after a check wait for the screen to settle, WDA page-source lookups on real iPhones are much faster, and a few smaller fixes.
