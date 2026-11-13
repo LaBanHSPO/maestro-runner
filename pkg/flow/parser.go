@@ -81,6 +81,15 @@ func splitYAMLDocuments(content string) []string {
 	var current strings.Builder
 	inMultiline := false
 	multilineIndent := 0
+	// Each document after a separator is padded with the blank lines that
+	// precede it, so yaml.Node.Line (and every ParseError built from it) is the
+	// line in the file, not the line after the "---". Blank lines parse as
+	// nothing, so the documents' content is unchanged.
+	pad := 0
+	flush := func() {
+		parts = append(parts, strings.Repeat("\n", pad)+current.String())
+		current.Reset()
+	}
 
 	lines := strings.Split(content, "\n")
 	for i, line := range lines {
@@ -103,9 +112,9 @@ func splitYAMLDocuments(content string) []string {
 
 		if !inMultiline && trimmed == "---" && strings.TrimLeft(line, " \t") == "---" {
 			if current.Len() > 0 {
-				parts = append(parts, current.String())
-				current.Reset()
+				flush()
 			}
+			pad = i + 1
 		} else {
 			current.WriteString(line)
 			current.WriteString("\n")
@@ -115,7 +124,7 @@ func splitYAMLDocuments(content string) []string {
 	if current.Len() > 0 {
 		s := strings.TrimSpace(current.String())
 		if s != "" {
-			parts = append(parts, current.String())
+			flush()
 		}
 	}
 
