@@ -1,0 +1,55 @@
+name: Driver bundles
+
+# Apps that embed maestro-runner as a Go library (see docs/go-library.md) get
+# the runner code from the module, but the on-device agents live in drivers/
+# and are read at run time from $MAESTRO_RUNNER_HOME/drivers/<platform>. This
+# publishes them per platform, at the same tag as the module, so an app can
+# install the driver files that match the code it compiled against.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to (re)publish bundles for
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  bundles:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ inputs.tag || github.ref_name }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ env.TAG }}
+
+      - name: Build bundles
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          for platform in android ios; do
+            # Paths inside the zip start at drivers/, so unzipping into
+            # MAESTRO_RUNNER_HOME gives the layout the runner expects. The
+            # binaries licence travels with the agents, as it requires.
+            zip -qr "dist/maestro-runner-drivers-${platform}-${TAG}.zip" \
+              "drivers/${platform}" drivers/LICENSE-BINARIES.md LICENSE
+          done
+          (cd dist && sha256sum *.zip > SHA256SUMS)
+          cat dist/SHA256SUMS
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/* --clobber
+          else
+            gh release create "$TAG" dist/* --title "$TAG" --verify-tag \
+              --notes "Driver bundles for maestro-runner $TAG. Unzip into MAESTRO_RUNNER_HOME. The DeviceLab agents are covered by drivers/LICENSE-BINARIES.md, not the Apache License."
+          fi

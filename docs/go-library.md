@@ -127,6 +127,30 @@ f, err := flow.Parse(yamlBytes, "")
 
 A parsed flow exposes `f.SourcePath`, `f.Config` (the `appId`, `name`, and tags from the YAML header), and `f.Steps`. The flow's declared name is `f.Config.Name`; it is whatever the YAML `name:` says, and empty when the flow does not set one, so derive report directory names from the file path as the example above does.
 
+## Cancelling a run and streaming progress
+
+`ExecuteFlowWithDriver` cannot be cancelled. `ExecuteFlowsWithDriverContext` runs one or more flows on the same driver and stops when the context is cancelled or its deadline passes (checked between steps and while waiting), leaving the driver usable for the next run. Each option adjusts the runner config before the run, which is how you swap the console callbacks for your own:
+
+```go
+ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+defer cancel()
+
+result, err := cli.ExecuteFlowsWithDriverContext(ctx, driver, cfg, []flow.Flow{*f},
+	func(rc *executor.RunnerConfig) {
+		rc.OnFlowStart, rc.OnFlowEnd = nil, nil
+		rc.OnStepComplete = func(idx int, desc string, passed bool, ms int64, errMsg string) {
+			// send to your UI
+		}
+		rc.Pauser = nil // never wait for a terminal on failure
+	})
+```
+
+A driver call that is already in flight is not interrupted by the context; it returns on its own timeout.
+
+## Driver files
+
+The module embeds only the iOS runner source. The device agents are read at run time from `$MAESTRO_RUNNER_HOME/drivers/<platform>`. Every `v*` tag publishes them as release assets, `maestro-runner-drivers-android-<tag>.zip` and `maestro-runner-drivers-ios-<tag>.zip` with `SHA256SUMS`; unzip into `MAESTRO_RUNNER_HOME` and use the bundle from the same tag as the module you pinned. The DeviceLab agents in them are covered by `drivers/LICENSE-BINARIES.md`.
+
 ## Lower level: the executor directly
 
 `ExecuteFlowWithDriver` is a convenience wrapper that also wires console output and the cloud hooks. If you want to run a batch of flows with no console printing and assemble reporting yourself, construct the runner directly:

@@ -1847,6 +1847,16 @@ func executeSingleDevice(cfg *RunConfig, flows []flow.Flow) (*executor.RunResult
 //	    result, _ := cli.ExecuteFlowWithDriver(driver, cfg, *f)
 //	}
 func ExecuteFlowWithDriver(driver core.Driver, cfg *RunConfig, f flow.Flow) (*executor.RunResult, error) {
+	return ExecuteFlowsWithDriverContext(context.Background(), driver, cfg, []flow.Flow{f})
+}
+
+// ExecuteFlowsWithDriverContext runs flows on an existing driver like
+// ExecuteFlowWithDriver, but stops when ctx is cancelled or its deadline
+// passes (checked between steps and while waiting), so an embedding app can
+// cancel a run without tearing down the driver. Each opt adjusts the runner
+// config before the run, for example to replace the console callbacks with
+// the app's own progress stream or to drop the interactive failure pauser.
+func ExecuteFlowsWithDriverContext(ctx context.Context, driver core.Driver, cfg *RunConfig, flows []flow.Flow, opts ...func(*executor.RunnerConfig)) (*executor.RunResult, error) {
 	driverName := resolveDriverName(cfg, cfg.Platform)
 	deviceInfo := buildDeviceReport(driver)
 
@@ -1856,7 +1866,7 @@ func ExecuteFlowWithDriver(driver core.Driver, cfg *RunConfig, f flow.Flow) (*ex
 		}
 	}
 
-	runner := executor.New(driver, executor.RunnerConfig{
+	rc := executor.RunnerConfig{
 		OutputDir:          cfg.OutputDir,
 		Parallelism:        0,
 		Artifacts:          cfg.Artifacts,
@@ -1882,10 +1892,14 @@ func ExecuteFlowWithDriver(driver core.Driver, cfg *RunConfig, f flow.Flow) (*ex
 		OnNestedFlowStart:  onNestedFlowStart,
 		OnFlowEnd:          onFlowEndWithCloud(cfg),
 		Pauser:             failurePauser(cfg, deviceInfo, driverName),
-	})
+	}
+	for _, opt := range opts {
+		opt(&rc)
+	}
+	runner := executor.New(driver, rc)
 
-	notifyCloudRunStart(cfg, 1)
-	return runner.Run(context.Background(), []flow.Flow{f})
+	notifyCloudRunStart(cfg, len(flows))
+	return runner.Run(ctx, flows)
 }
 
 // ANSI color codes
