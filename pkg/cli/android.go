@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -17,6 +16,7 @@ import (
 	"github.com/devicelab-dev/maestro-runner/pkg/flutter"
 	"github.com/devicelab-dev/maestro-runner/pkg/logger"
 	"github.com/devicelab-dev/maestro-runner/pkg/maestro"
+	"github.com/devicelab-dev/maestro-runner/pkg/proc"
 	"github.com/devicelab-dev/maestro-runner/pkg/uiautomator2"
 )
 
@@ -351,7 +351,7 @@ func noAndroidDevicesMessage(busy, notReady int) string {
 // Returns available devices (may be fewer than count) and an error only if zero found.
 func autoDetectAndroidDevices(count int) ([]string, error) {
 	// Use adb devices to list all connected devices
-	cmd := exec.Command("adb", "devices")
+	cmd := proc.Command("adb", "devices")
 	out, err := cmd.Output()
 	if err != nil {
 		return nil, fmt.Errorf("failed to list Android devices: %w", err)

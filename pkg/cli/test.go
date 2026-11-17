@@ -8,7 +8,6 @@ import (
 	"net"
 	"net/url"
 	"os"
-	"os/exec"
 	"os/signal"
 	"path/filepath"
 	"strings"
@@ -29,6 +28,7 @@ import (
 	"github.com/devicelab-dev/maestro-runner/pkg/executor"
 	"github.com/devicelab-dev/maestro-runner/pkg/flow"
 	"github.com/devicelab-dev/maestro-runner/pkg/logger"
+	"github.com/devicelab-dev/maestro-runner/pkg/proc"
 	"github.com/devicelab-dev/maestro-runner/pkg/report"
 	"github.com/devicelab-dev/maestro-runner/pkg/simulator"
 	"github.com/devicelab-dev/maestro-runner/pkg/telemetry"
@@ -2531,7 +2531,7 @@ func createAppiumDriver(cfg *RunConfig) (core.Driver, func(), error) {
 
 // runCommand runs a command and returns stdout.
 func runCommand(name string, args ...string) (string, error) {
-	cmd := exec.Command(name, args...)
+	cmd := proc.Command(name, args...)
 	out, err := cmd.Output()
 	if err != nil {
 		return "", err
@@ -2571,7 +2571,7 @@ func checkDeviceAvailable(deviceID, platform string) error {
 		}
 
 		// Also verify device is connected via adb
-		cmd := exec.Command("adb", "-s", deviceID, "get-state")
+		cmd := proc.Command("adb", "-s", deviceID, "get-state")
 		output, err := cmd.Output()
 		if err != nil {
 			return fmt.Errorf("device not found or not connected")

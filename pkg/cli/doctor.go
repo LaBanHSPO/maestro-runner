@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/devicelab-dev/maestro-runner/pkg/proc"
 	"github.com/urfave/cli/v2"
 )
 
@@ -367,7 +368,7 @@ func checkVisibleDevices() DoctorCheck {
 // because the diagnostics worth reading — the Xcode licence prompt in
 // particular — arrive on stderr.
 func commandOutput(bin string, args ...string) (string, error) {
-	cmd := exec.Command(bin, args...)
+	cmd := proc.Command(bin, args...)
 	out, err := cmd.CombinedOutput()
 	return string(out), err
 }

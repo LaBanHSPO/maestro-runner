@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"os/exec"
 	"strings"
 	"time"
 
 	"github.com/devicelab-dev/maestro-runner/pkg/core"
 	"github.com/devicelab-dev/maestro-runner/pkg/flow"
+	"github.com/devicelab-dev/maestro-runner/pkg/proc"
 )
 
 // defaultRunShellTimeout bounds a command that never returns. A flow that hangs
@@ -42,7 +42,7 @@ func (fr *FlowRunner) executeRunShell(step *flow.RunShellStep) *core.CommandResu
 	ctx, cancel := context.WithTimeout(fr.ctx, timeout)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, "sh", "-c", command)
+	cmd := proc.CommandContext(ctx, "sh", "-c", command)
 	cmd.Env = fr.shellEnv(step.Env)
 
 	output, err := cmd.CombinedOutput()
